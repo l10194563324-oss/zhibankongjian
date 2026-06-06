@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>植瓣日 - 极致手势自适应版</title>
+    <title>植瓣日 - 触控全修复版</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap">
     <style>
-      /* ==================== 1. 字体系统与画廊级美学复位 ==================== */
+      /* ==================== 1. 字体系统与基础画廊美学 ==================== */
       :root {
         --bg-color: #ede9e1;      /* 侘寂泥土原色底 */
         --text-color: #262421;    /* 矿物深灰 */
@@ -36,7 +36,6 @@
         font-family: var(--font-sans);
         font-weight: 200;
         -webkit-font-smoothing: antialiased;
-        /* 严禁手机端下拉橡皮筋刷新和左右滑动手势冲突 */
         touch-action: none; 
       }
 
@@ -87,6 +86,7 @@
         perspective: 600px; 
         perspective-origin: center center;
       }
+      .wall-viewport[aria-hidden="true"] { display: none; }
 
       .wall-canvas {
         position: absolute;
@@ -116,7 +116,7 @@
       .plant-card .card-title { font-size: 12px; font-weight: 400; color: var(--text-color); }
       .plant-card .card-pot { font-size: 10px; color: #888; font-family: var(--font-serif); margin-top: 2px; }
 
-      /* ==================== 3. Diary 区域（独立横向捏合缩放手势区） ==================== */
+      /* ==================== 3. Diary 区域（全面开启横向可滑动轴） ==================== */
       .diary-viewport {
         flex: 1;
         position: relative;
@@ -125,7 +125,7 @@
         display: none;
         background: var(--bg-color);
         -webkit-overflow-scrolling: touch;
-        touch-action: pan-y; /* 允许纵向正常滚动列表，横向手势留给 Canvas 捕捉 */
+        touch-action: pan-y; 
       }
       .diary-viewport[aria-hidden="false"] { display: block; }
       
@@ -145,19 +145,26 @@
         border-bottom: 1px dashed var(--text-color); padding-bottom: 2px;
       }
 
+      /* 【关键重构】允许内容溢出，并开启手机端单指横向流畅滑动 */
       .chart-container {
         width: 100%;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        padding: 20px 0px; /* 移除左右内边距，方便手势贴边运算 */
+        padding: 20px 0px 10px 0px; 
         margin-bottom: 30px;
-        touch-action: none; /* 完全由 JS 控制双指缩放曲线 */
-        overflow: hidden;
+        overflow-x: auto; 
+        -webkit-overflow-scrolling: touch; 
+        touch-action: pan-x; 
       }
       .chart-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #777; margin-bottom: 15px; padding-left: 15px; }
-      #diaryCanvasElement { width: 100%; height: 220px; display: block; }
+      
+      /* 取消固定 100% 宽度，使其宽度可以被 JS 动态撑长以实现拖拽移动 */
+      #diaryCanvasElement { 
+        height: 220px; 
+        display: block; 
+      }
 
-      /* ==================== 4. 全屏极简录制相机 ==================== */
+      /* ==================== 4. 全屏录制相机 ==================== */
       .camera-layer {
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -174,7 +181,7 @@
       .viewfinder-hint { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.7); pointer-events: none; border: 1px solid rgba(255,255,255,0.4); padding: 6px 16px; width: max-content; }
       .shutter-flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 220; }
 
-      /* ==================== 5. 右上角白描小✕极简统一弹窗系统 ==================== */
+      /* ==================== 5. 右上角白描小✕统一弹窗系统 ==================== */
       .detail-sheet {
         position: absolute; top: 0; right: -100%;
         width: 100%; height: 100%;
@@ -185,32 +192,24 @@
       }
       .detail-sheet[aria-hidden="false"] { right: 0; }
       
-      /* 核心修复：独立、绝对定位的右上角极简卡片小✕键 */
+      /* 右上角绝对定位关闭按钮 */
       .corner-close { 
         position: absolute; 
-        top: 16px; 
-        right: 16px;
+        top: 14px; 
+        right: 14px;
         background: none; 
         border: none; 
         font-size: 18px; 
         cursor: pointer; 
         color: var(--text-color); 
-        z-index: 10;
-        padding: 10px; /* 增大触控热区 */
+        z-index: 999; /* 强行确保顶层置顶 */
+        padding: 12px; 
       }
       .corner-close::before { content: "✕"; }
 
-      /* 详情页内嵌照片展示区 */
       .detail-photo-frame {
-        width: 100%;
-        height: 200px;
-        background-size: cover;
-        background-position: center;
-        margin-top: 24px;
-        margin-bottom: 16px;
-        border: 1px solid var(--border-color);
+        width: 100%; height: 200px; background-size: cover; background-position: center; margin-top: 24px; margin-bottom: 16px; border: 1px solid var(--border-color);
       }
-
       .detail-pot-badge { font-size: 11px; color: #888; font-family: var(--font-serif); margin-top: 15px; margin-bottom: 4px; }
       .detail-title { font-size: 24px; margin-bottom: 12px; }
       .history-section { margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; }
@@ -221,15 +220,15 @@
       .rec-tags { display: flex; flex-wrap: wrap; gap: 6px; }
       .rec-tag { font-size: 12px; padding: 4px 10px; border: 1px solid var(--border-color); color: var(--text-color); font-weight: 300; }
 
-      /* 【重大修复】拍照后的新数据手动登记浮层结构 */
+      /* Save Data 登记信息表单浮层 */
       .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); z-index: 300; display: none; justify-content: center; align-items: center; }
       
-      /* 干净的卡片结构，绝不出现多余的深色遮罩条 */
+      /* 【布局重构】白色登记小卡片 */
       .input-modal { 
         position: relative; 
         background: var(--card-bg); 
-        padding: 40px 20px 20px 20px; 
-        width: 85%; 
+        padding: 45px 20px 20px 20px; /* 预留顶部安全距离给关闭按钮 */
+        width: 86%; 
         max-width: 320px; 
         border: 1px solid var(--text-color); 
         box-shadow: 0 20px 50px rgba(0,0,0,0.15);
@@ -238,7 +237,7 @@
       .input-modal input, .input-modal select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); font-size: 13px; font-family: var(--font-sans); background: transparent; outline: none; font-weight: 200; border-radius: 0; }
       .input-modal button { width: 100%; padding: 12px; background: var(--text-color); color: #fff; border: none; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 11px; margin-top: 5px; cursor: pointer; }
 
-      /* ==================== 6. 底部沉底式导航栏 ==================== */
+      /* ==================== 6. 底部导航栏 ==================== */
       .bottom-dock {
         height: 65px; border-top: 1px solid var(--border-color);
         background: rgba(237, 233, 225, 0.95); backdrop-filter: blur(10px);
@@ -343,17 +342,17 @@
         }
       };
 
-      // 交互引擎关键变量
       let transformState = { x: 0, y: 0, z: -100 };
       let isDragging = false;
       let startPointer = { x: 0, y: 0 };
       let touchStartDist = 0;
       let touchScaleZ = 0;
 
-      // Diary 横向缩放专属变量
+      // Diary 区域手势变量
       let chartScaleX = 1.0; 
       let startChartScaleX = 1.0;
       let chartTouchStartDist = 0;
+      let isPinchingChart = false;
 
       let cameraStream = null;
       let tempCapturedPhoto = "";
@@ -382,7 +381,7 @@
         document.getElementById('clock').innerText = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       }, 1000);
 
-      // 3D 照片墙有序散射排布
+      // 3D 照片墙无死角渲染
       function render3DWall() {
         wallCanvas.innerHTML = "";
         DATABASE.pots.forEach((pot, index) => {
@@ -421,14 +420,9 @@
         wallCanvas.style.transform = `translate3d(${transformState.x}px, ${transformState.y}px, ${transformState.z}px)`;
       }
 
-      function getTouchDistance(touches) {
-        return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
-      }
-
-      // ==================== 🛠️ 触控防死锁优化（完美解决卡住问题） ====================
+      // 照片墙防死锁触控引擎
       function onPointerDown(e) {
         const isTouch = e.touches ? true : false;
-        
         if (isTouch && e.touches.length === 2) {
           isDragging = false;
           touchStartDist = getTouchDistance(e.touches);
@@ -443,9 +437,7 @@
       }
 
       function onPointerMove(e) {
-        // 强行禁掉手机端浏览器的弹性默认行为
         if (e.cancelable) e.preventDefault();
-        
         const isTouch = e.touches ? true : false;
         if (isTouch && e.touches.length === 2) {
           const currentDist = getTouchDistance(e.touches);
@@ -470,29 +462,33 @@
       window.addEventListener('mouseup', () => isDragging = false);
       wallViewport.addEventListener('wheel', (e) => { e.preventDefault(); transformState.z += e.deltaY * -0.6; transformState.z = Math.min(500, Math.max(-1500, transformState.z)); updateCanvasTransform(); });
 
-      // ==================== 📈 Diary 曲线图【横向双指缩放】手势驱动层 ====================
+      // ==================== 📈 Diary 双指缩放事件驱动处理 ====================
       diaryChartZone.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
+          isPinchingChart = true;
           chartTouchStartDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
           startChartScaleX = chartScaleX;
         }
       }, { passive: true });
 
       diaryChartZone.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2) {
+        if (e.touches.length === 2 && isPinchingChart) {
           if (e.cancelable) e.preventDefault();
           const currentDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
           if (chartTouchStartDist > 5) {
             const factor = currentDist / chartTouchStartDist;
             chartScaleX = startChartScaleX * factor;
-            // 限制 X 轴缩放范围：1倍到3倍
-            chartScaleX = Math.min(3.0, Math.max(1.0, chartScaleX));
+            chartScaleX = Math.min(3.5, Math.max(1.0, chartScaleX)); // 扩展缩放上限到3.5倍
             drawDiaryCurves();
           }
         }
       }, { passive: false });
 
-      // ==================== 🖼️ 详情弹窗：包含对应照片与右上角关闭 ====================
+      diaryChartZone.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) isPinchingChart = false;
+      });
+
+      // 联动弹出独立的详情档案
       function showPotDetail(potId) {
         const pot = DATABASE.pots.find(p => p.pot_id === potId);
         if(!pot) return;
@@ -505,7 +501,6 @@
 
         detailContent.innerHTML = `
           <div class="detail-photo-frame" style="background-image: url('${pot.photo}')"></div>
-
           <div class="detail-pot-badge serif-heading">${pot.pot_id} ARCHIVE</div>
           <h2 class="detail-title serif-heading">${pot.current_plant}</h2>
           <p style="font-size:12px; color:#555; margin-top:-6px; margin-bottom:5px;">所属科系：${pot.current_family}</p>
@@ -530,21 +525,22 @@
       document.getElementById('detailClose').addEventListener('click', () => detailSheet.setAttribute('aria-hidden', 'true'));
       document.getElementById('inputModalClose').addEventListener('click', () => inputModal.style.display = 'none');
 
-      // Canvas 曲线重画（支持动态 chartScaleX 横向宽度扩充）
+      // ==================== 🛠️ Canvas 曲线重绘渲染与物理尺寸撑长 ====================
       function drawDiaryCurves() {
         const canvas = diaryCanvasElement;
         const ctx = canvas.getContext('2d');
-        const viewWidth = canvas.parentElement.clientWidth;
+        const containerWidth = canvas.parentElement.clientWidth;
         const height = 220;
         
-        // 关键：使画布总长随 chartScaleX 缩放系数变化
-        const width = viewWidth * chartScaleX;
+        // 【关键重构】：真实的让 Canvas 节点随缩放比例成倍变宽，从而利用原生容器的 overflow-x 进行无级横向拖移
+        const dynamicWidth = containerWidth * chartScaleX;
+        canvas.style.width = `${dynamicWidth}px`;
         
-        canvas.width = viewWidth * window.devicePixelRatio;
+        canvas.width = dynamicWidth * window.devicePixelRatio;
         canvas.height = height * window.devicePixelRatio;
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         
-        ctx.clearRect(0, 0, viewWidth, height);
+        ctx.clearRect(0, 0, dynamicWidth, height);
         chartClickRegions = [];
 
         const monthlyCounts = Array(12).fill(0);
@@ -565,20 +561,15 @@
           }
         });
 
-        const padding = { top: 30, right: 30, bottom: 40, left: 30 };
-        const graphWidth = width - padding.left - padding.right;
+        const padding = { top: 30, right: 40, bottom: 40, left: 40 };
+        const graphWidth = dynamicWidth - padding.left - padding.right;
         const graphHeight = height - padding.top - padding.bottom;
-
-        // 如果图表放大了，允许画布拥有一定的横向拖动偏移或居中表现
-        const offsetX = chartScaleX > 1.0 ? -(chartScaleX - 1.0) * (viewWidth / 2) : 0;
-        ctx.save();
-        ctx.translate(offsetX, 0);
 
         ctx.strokeStyle = '#e8e5de';
         ctx.lineWidth = 1;
         for (let i = 0; i <= 3; i++) {
           const y = padding.top + (graphHeight / 3) * i;
-          ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(width - padding.right, y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(dynamicWidth - padding.right, y); ctx.stroke();
         }
 
         const points = [];
@@ -627,18 +618,13 @@
               ctx.fillStyle = '#262421';
               ctx.fillText(potId, pt.x, textY + 1);
 
-              // 映射真实的屏幕落点点击坐标（叠加上 offsetX 轴偏移）
+              // 移除之前干扰算错的内部画布 offsetX，直接基于真实的节点本地落点打桩热区
               chartClickRegions.push({
-                pot_id: potId, 
-                x1: (pt.x - textWidth/2) + offsetX, 
-                y1: textY - 8, 
-                x2: (pt.x + textWidth/2) + offsetX, 
-                y2: textY + 3
+                pot_id: potId, x1: pt.x - textWidth/2, y1: textY - 8, x2: pt.x + textWidth/2, y2: textY + 3
               });
             });
           }
         });
-        ctx.restore();
       }
 
       diaryCanvasElement.addEventListener('click', (e) => {
@@ -658,14 +644,14 @@
         drawDiaryCurves();
       });
 
-      // 相机调度控制
+      // 相机操作层
       async function startCamera() {
         try {
           cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1080 }, height: { ideal: 1080 } }, audio: false });
           cameraPreview.srcObject = cameraStream;
           cameraLayer.setAttribute('aria-hidden', 'false');
         } catch (err) {
-          alert("未检测到摄像头，已自动切入录入表单。");
+          alert("未检测到摄像硬件，已拉起手动信息补充表单空间。");
           stopCamera();
           inputModal.style.display = 'flex';
         }
@@ -692,7 +678,7 @@
 
       document.getElementById('savePlantBtn').addEventListener('click', () => {
         const potId = document.getElementById('inputPotId').value.trim() || `#P0${DATABASE.pots.length + 1}`;
-        const name = document.getElementById('inputName').value.trim() || "新农作";
+        const name = document.getElementById('inputName').value.trim() || "未知农作物";
         const family = document.getElementById('inputFamily').value;
         const pickedDate = document.getElementById('inputDate').value || "2026-06-06";
         const parsedMonth = parseInt(pickedDate.split('-')[1]) || 6;
