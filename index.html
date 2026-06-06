@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>植瓣日 - Mobile Pure</title>
+    <title>植瓣日 - 极致手势自适应版</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap">
     <style>
-      /* ==================== 1. 移动端画廊视觉与高级感复位 ==================== */
+      /* ==================== 1. 字体系统与画廊级美学复位 ==================== */
       :root {
         --bg-color: #ede9e1;      /* 侘寂泥土原色底 */
         --text-color: #262421;    /* 矿物深灰 */
@@ -25,7 +25,6 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* 针对手机全屏环境的严苛复位 */
       body, html {
         width: 100%;
         height: 100%;
@@ -37,6 +36,8 @@
         font-family: var(--font-sans);
         font-weight: 200;
         -webkit-font-smoothing: antialiased;
+        /* 严禁手机端下拉橡皮筋刷新和左右滑动手势冲突 */
+        touch-action: none; 
       }
 
       .serif-heading {
@@ -63,7 +64,6 @@
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='clayNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5' stitchTiles='stitch'/%3E%3CfeDiffuseLighting in='texture' lighting-color='%23fff' surfaceScale='3'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23clayNoise)'/%3E%3C/svg%3E");
       }
 
-      /* 完美适配手机顶部的状态栏 */
       .top-bar {
         height: 50px;
         padding: 0 24px;
@@ -75,21 +75,18 @@
         backdrop-filter: blur(8px);
         border-bottom: 1px solid var(--border-color);
         padding-top: env(safe-area-inset-top);
-        box-content: content-box;
       }
       .status-copy { font-size: 14px; font-weight: 600; font-family: var(--font-serif); letter-spacing: 0.05em;}
       .avatar { width: 22px; height: 22px; border-radius: 50%; background: transparent; border: 1px solid var(--text-color); }
 
-      /* ==================== 2. 3D 照片墙视口 (深度优化多图无阻碍触控) ==================== */
+      /* ==================== 2. 3D 照片墙视口 ==================== */
       .wall-viewport {
         flex: 1;
         position: relative;
         overflow: hidden;
         perspective: 600px; 
         perspective-origin: center center;
-        touch-action: none;
       }
-      .wall-viewport[aria-hidden="true"] { display: none; }
 
       .wall-canvas {
         position: absolute;
@@ -97,10 +94,9 @@
         transform-style: preserve-3d;
         will-change: transform;
         display: flex; justify-content: center; align-items: center;
-        pointer-events: none; /* 让画布容器不干扰点击响应 */
+        pointer-events: none;
       }
 
-      /* 3D 照片卡片 */
       .plant-card {
         position: absolute;
         width: 140px;
@@ -111,7 +107,7 @@
         cursor: pointer;
         transform-style: preserve-3d;
         backface-visibility: hidden;
-        pointer-events: auto; /* 【核心修复】确保每张卡片独立、100% 独立接收点击 */
+        pointer-events: auto;
       }
       .plant-card .img-placeholder {
         width: 100%; height: 140px; background-color: #e5e0d5; background-size: cover; background-position: center;
@@ -120,7 +116,7 @@
       .plant-card .card-title { font-size: 12px; font-weight: 400; color: var(--text-color); }
       .plant-card .card-pot { font-size: 10px; color: #888; font-family: var(--font-serif); margin-top: 2px; }
 
-      /* ==================== 3. Diary 年度白描折线空间 ==================== */
+      /* ==================== 3. Diary 区域（独立横向捏合缩放手势区） ==================== */
       .diary-viewport {
         flex: 1;
         position: relative;
@@ -129,6 +125,7 @@
         display: none;
         background: var(--bg-color);
         -webkit-overflow-scrolling: touch;
+        touch-action: pan-y; /* 允许纵向正常滚动列表，横向手势留给 Canvas 捕捉 */
       }
       .diary-viewport[aria-hidden="false"] { display: block; }
       
@@ -152,13 +149,15 @@
         width: 100%;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        padding: 20px 12px;
+        padding: 20px 0px; /* 移除左右内边距，方便手势贴边运算 */
         margin-bottom: 30px;
+        touch-action: none; /* 完全由 JS 控制双指缩放曲线 */
+        overflow: hidden;
       }
-      .chart-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #777; margin-bottom: 15px; }
+      .chart-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #777; margin-bottom: 15px; padding-left: 15px; }
       #diaryCanvasElement { width: 100%; height: 220px; display: block; }
 
-      /* ==================== 4. 极简全屏真机相机 ==================== */
+      /* ==================== 4. 全屏极简录制相机 ==================== */
       .camera-layer {
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
@@ -175,50 +174,76 @@
       .viewfinder-hint { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.7); pointer-events: none; border: 1px solid rgba(255,255,255,0.4); padding: 6px 16px; width: max-content; }
       .shutter-flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 220; }
 
-      /* ==================== 5. 右上角小✕关闭的弹窗与详情抽屉 ==================== */
+      /* ==================== 5. 右上角白描小✕极简统一弹窗系统 ==================== */
       .detail-sheet {
         position: absolute; top: 0; right: -100%;
         width: 100%; height: 100%;
         background: var(--card-bg); box-shadow: -5px 0 30px rgba(0,0,0,0.05);
         z-index: 250; transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        padding: 50px 24px 24px 24px; display: flex; flex-direction: column;
+        padding: 24px; display: flex; flex-direction: column;
+        overflow-y: auto;
       }
       .detail-sheet[aria-hidden="false"] { right: 0; }
       
-      /* 【右上角极简小 X 样式规则】 */
+      /* 核心修复：独立、绝对定位的右上角极简卡片小✕键 */
       .corner-close { 
-        position: absolute; top: 16px; right: 20px;
-        background: none; border: none; font-size: 18px; 
-        cursor: pointer; color: var(--text-color); z-index: 10;
-        padding: 8px;
+        position: absolute; 
+        top: 16px; 
+        right: 16px;
+        background: none; 
+        border: none; 
+        font-size: 18px; 
+        cursor: pointer; 
+        color: var(--text-color); 
+        z-index: 10;
+        padding: 10px; /* 增大触控热区 */
       }
       .corner-close::before { content: "✕"; }
 
-      .detail-pot-badge { font-size: 11px; color: #888; font-family: var(--font-serif); margin-bottom: 4px; }
-      .detail-title { font-size: 24px; margin-bottom: 15px; }
-      .history-section { margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+      /* 详情页内嵌照片展示区 */
+      .detail-photo-frame {
+        width: 100%;
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+        margin-top: 24px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border-color);
+      }
+
+      .detail-pot-badge { font-size: 11px; color: #888; font-family: var(--font-serif); margin-top: 15px; margin-bottom: 4px; }
+      .detail-title { font-size: 24px; margin-bottom: 12px; }
+      .history-section { margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; }
       .history-title { font-size: 11px; font-weight: 600; margin-bottom: 8px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; }
       .history-item { font-size: 13px; margin-bottom: 6px; display: flex; justify-content: space-between; font-weight: 300; }
-      .recommend-box { margin-top: auto; border-top: 1px solid var(--text-color); padding-top: 15px; margin-bottom: 75px; }
+      .recommend-box { margin-top: auto; border-top: 1px solid var(--text-color); padding-top: 15px; padding-bottom: env(safe-area-inset-bottom); }
       .recommend-box h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
       .rec-tags { display: flex; flex-wrap: wrap; gap: 6px; }
       .rec-tag { font-size: 12px; padding: 4px 10px; border: 1px solid var(--border-color); color: var(--text-color); font-weight: 300; }
 
-      /* Record 拍摄完成弹出的手动录入框覆盖层 */
+      /* 【重大修复】拍照后的新数据手动登记浮层结构 */
       .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); z-index: 300; display: none; justify-content: center; align-items: center; }
       
-      /* 【右上角小✕完美整合】 */
-      .input-modal { position: relative; background: var(--card-bg); padding: 36px 24px 24px 24px; width: 85%; max-width: 320px; border: 1px solid var(--text-color); }
-      .input-modal h3 { font-size: 14px; margin-bottom: 18px; text-align: center; letter-spacing: 0.05em; }
-      .input-modal input, .input-modal select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid var(--border-color); font-size: 13px; font-family: var(--font-sans); background: transparent; outline: none; font-weight: 200; border-radius: 0; }
-      .input-modal button { width: 100%; padding: 12px; background: var(--text-color); color: #fff; border: none; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 11px; margin-top: 5px; }
+      /* 干净的卡片结构，绝不出现多余的深色遮罩条 */
+      .input-modal { 
+        position: relative; 
+        background: var(--card-bg); 
+        padding: 40px 20px 20px 20px; 
+        width: 85%; 
+        max-width: 320px; 
+        border: 1px solid var(--text-color); 
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      }
+      .input-modal h3 { font-size: 14px; margin-bottom: 20px; text-align: center; letter-spacing: 0.05em; font-weight: 400;}
+      .input-modal input, .input-modal select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); font-size: 13px; font-family: var(--font-sans); background: transparent; outline: none; font-weight: 200; border-radius: 0; }
+      .input-modal button { width: 100%; padding: 12px; background: var(--text-color); color: #fff; border: none; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 11px; margin-top: 5px; cursor: pointer; }
 
-      /* ==================== 6. 底部沉底式可见导航栏 ==================== */
+      /* ==================== 6. 底部沉底式导航栏 ==================== */
       .bottom-dock {
         height: 65px; border-top: 1px solid var(--border-color);
         background: rgba(237, 233, 225, 0.95); backdrop-filter: blur(10px);
         display: flex; justify-content: space-around; align-items: center; 
-        z-index: 130; /* 提升层级，确保永远在最前可触控 */
+        z-index: 130; 
         padding-bottom: env(safe-area-inset-bottom);
       }
       .dock-item { 
@@ -249,7 +274,7 @@
           <button class="year-switcher" id="yearSwitcherBtn" type="button">查看 2025 年</button>
         </div>
         
-        <div class="chart-container">
+        <div class="chart-container" id="diaryChartZone">
           <div class="chart-title">Monthly Planting Distribution Curves</div>
           <canvas id="diaryCanvasElement"></canvas>
         </div>
@@ -278,7 +303,7 @@
       <div class="modal-overlay" id="inputModal">
         <div class="input-modal">
           <button class="corner-close" id="inputModalClose" type="button" aria-label="Close"></button>
-          <h3 class="serif-heading" style="font-weight:600;">NEW DATA</h3>
+          <h3 class="serif-heading">NEW DATA</h3>
           <input type="text" id="inputPotId" placeholder="花盆编号 (如: #A01)" />
           <input type="text" id="inputName" placeholder="植物名称 (如: 圣女果)" />
           <select id="inputFamily">
@@ -318,11 +343,17 @@
         }
       };
 
+      // 交互引擎关键变量
       let transformState = { x: 0, y: 0, z: -100 };
       let isDragging = false;
       let startPointer = { x: 0, y: 0 };
       let touchStartDist = 0;
       let touchScaleZ = 0;
+
+      // Diary 横向缩放专属变量
+      let chartScaleX = 1.0; 
+      let startChartScaleX = 1.0;
+      let chartTouchStartDist = 0;
 
       let cameraStream = null;
       let tempCapturedPhoto = "";
@@ -330,6 +361,7 @@
 
       const wallViewport = document.getElementById('wallViewport');
       const diaryViewport = document.getElementById('diaryViewport');
+      const diaryChartZone = document.getElementById('diaryChartZone');
       const wallCanvas = document.getElementById('wallCanvas');
       const cameraLayer = document.getElementById('cameraLayer');
       const cameraPreview = document.getElementById('cameraPreview');
@@ -350,14 +382,13 @@
         document.getElementById('clock').innerText = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       }, 1000);
 
-      // 【算法重构】：完美的 3D 层递螺旋散开排列，绝不发生点击重合或遮挡失效
+      // 3D 照片墙有序散射排布
       function render3DWall() {
         wallCanvas.innerHTML = "";
         DATABASE.pots.forEach((pot, index) => {
           const card = document.createElement('div');
           card.className = "plant-card";
           
-          // 给每一张卡片独立计算 Z 轴深度位置
           const posZ = index * -220; 
           const angle = index * 1.1; 
           const radius = 110 + (index * 22); 
@@ -365,8 +396,6 @@
           const posY = Math.sin(angle) * radius * 0.75;
 
           card.style.transform = `translate3d(${posX}px, ${posY}px, ${posZ}px)`;
-          
-          // 【核心修复】：为卡片显式注入其渲染深度值，让点击事件可以穿过未选卡片
           card.style.zIndex = Math.floor(1000 + posZ);
 
           card.innerHTML = `
@@ -377,7 +406,6 @@
             </div>
           `;
           
-          // 给每一张卡片直接绑定原生触控/点击唤醒机制，排除遮挡死区
           card.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -397,15 +425,15 @@
         return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
       }
 
-      // 手势驱动引擎
+      // ==================== 🛠️ 触控防死锁优化（完美解决卡住问题） ====================
       function onPointerDown(e) {
         const isTouch = e.touches ? true : false;
+        
         if (isTouch && e.touches.length === 2) {
           isDragging = false;
           touchStartDist = getTouchDistance(e.touches);
           touchScaleZ = transformState.z;
         } else {
-          // 如果点到了卡片，不触发背景画布的拖拽
           if (e.target.closest('.plant-card')) return;
           isDragging = true;
           const clientX = isTouch ? e.touches[0].clientX : e.clientX;
@@ -415,6 +443,9 @@
       }
 
       function onPointerMove(e) {
+        // 强行禁掉手机端浏览器的弹性默认行为
+        if (e.cancelable) e.preventDefault();
+        
         const isTouch = e.touches ? true : false;
         if (isTouch && e.touches.length === 2) {
           const currentDist = getTouchDistance(e.touches);
@@ -439,7 +470,29 @@
       window.addEventListener('mouseup', () => isDragging = false);
       wallViewport.addEventListener('wheel', (e) => { e.preventDefault(); transformState.z += e.deltaY * -0.6; transformState.z = Math.min(500, Math.max(-1500, transformState.z)); updateCanvasTransform(); });
 
-      // 统一唤醒底层详情面板
+      // ==================== 📈 Diary 曲线图【横向双指缩放】手势驱动层 ====================
+      diaryChartZone.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          chartTouchStartDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+          startChartScaleX = chartScaleX;
+        }
+      }, { passive: true });
+
+      diaryChartZone.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+          if (e.cancelable) e.preventDefault();
+          const currentDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+          if (chartTouchStartDist > 5) {
+            const factor = currentDist / chartTouchStartDist;
+            chartScaleX = startChartScaleX * factor;
+            // 限制 X 轴缩放范围：1倍到3倍
+            chartScaleX = Math.min(3.0, Math.max(1.0, chartScaleX));
+            drawDiaryCurves();
+          }
+        }
+      }, { passive: false });
+
+      // ==================== 🖼️ 详情弹窗：包含对应照片与右上角关闭 ====================
       function showPotDetail(potId) {
         const pot = DATABASE.pots.find(p => p.pot_id === potId);
         if(!pot) return;
@@ -451,15 +504,17 @@
         }
 
         detailContent.innerHTML = `
+          <div class="detail-photo-frame" style="background-image: url('${pot.photo}')"></div>
+
           <div class="detail-pot-badge serif-heading">${pot.pot_id} ARCHIVE</div>
           <h2 class="detail-title serif-heading">${pot.current_plant}</h2>
-          <p style="font-size:12px; color:#555; margin-top:-8px; margin-bottom:5px;">所属科系：${pot.current_family}</p>
+          <p style="font-size:12px; color:#555; margin-top:-6px; margin-bottom:5px;">所属科系：${pot.current_family}</p>
           <p style="font-size:11px; font-family:var(--font-serif); font-style:italic; color:#888;">种植登记时间：${pot.date}</p>
           
           <div class="history-section">
             <h3 class="history-title">Crop Rotation Timeline</h3>
             <div class="history-item"><span>2026年 (当前季)</span><span style="font-weight:400;">${pot.current_plant} [${pot.date}]</span></div>
-            ${pot.history.map(h => `<div class="history-item"><span>${h.year}年 (历史季)</span><span>${h.plant} [${h.date || '无数据'}]</span></div>`).join('')}
+            ${pot.history.map(h => `<div class="history-item"><span>${h.year}年 (历史季)</span><span>${h.plant} [${h.date || '无资料'}]</span></div>`).join('')}
           </div>
 
           <div class="recommend-box">
@@ -472,21 +527,24 @@
         detailSheet.setAttribute('aria-hidden', 'false');
       }
 
-      // 关闭事件控制
       document.getElementById('detailClose').addEventListener('click', () => detailSheet.setAttribute('aria-hidden', 'true'));
       document.getElementById('inputModalClose').addEventListener('click', () => inputModal.style.display = 'none');
 
-      // Canvas 年度曲线数据绘制
+      // Canvas 曲线重画（支持动态 chartScaleX 横向宽度扩充）
       function drawDiaryCurves() {
         const canvas = diaryCanvasElement;
         const ctx = canvas.getContext('2d');
-        const width = canvas.parentElement.clientWidth - 24;
+        const viewWidth = canvas.parentElement.clientWidth;
         const height = 220;
-        canvas.width = width * window.devicePixelRatio;
+        
+        // 关键：使画布总长随 chartScaleX 缩放系数变化
+        const width = viewWidth * chartScaleX;
+        
+        canvas.width = viewWidth * window.devicePixelRatio;
         canvas.height = height * window.devicePixelRatio;
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         
-        ctx.clearRect(0, 0, width, height);
+        ctx.clearRect(0, 0, viewWidth, height);
         chartClickRegions = [];
 
         const monthlyCounts = Array(12).fill(0);
@@ -507,9 +565,14 @@
           }
         });
 
-        const padding = { top: 30, right: 20, bottom: 40, left: 30 };
+        const padding = { top: 30, right: 30, bottom: 40, left: 30 };
         const graphWidth = width - padding.left - padding.right;
         const graphHeight = height - padding.top - padding.bottom;
+
+        // 如果图表放大了，允许画布拥有一定的横向拖动偏移或居中表现
+        const offsetX = chartScaleX > 1.0 ? -(chartScaleX - 1.0) * (viewWidth / 2) : 0;
+        ctx.save();
+        ctx.translate(offsetX, 0);
 
         ctx.strokeStyle = '#e8e5de';
         ctx.lineWidth = 1;
@@ -556,7 +619,7 @@
               ctx.textAlign = 'center';
               
               const textWidth = ctx.measureText(potId).width + 6;
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
               ctx.fillRect(pt.x - textWidth/2, textY - 8, textWidth, 11);
               ctx.lineWidth = 0.5; ctx.strokeStyle = '#262421';
               ctx.strokeRect(pt.x - textWidth/2, textY - 8, textWidth, 11);
@@ -564,12 +627,18 @@
               ctx.fillStyle = '#262421';
               ctx.fillText(potId, pt.x, textY + 1);
 
+              // 映射真实的屏幕落点点击坐标（叠加上 offsetX 轴偏移）
               chartClickRegions.push({
-                pot_id: potId, x1: pt.x - textWidth/2, y1: textY - 8, x2: pt.x + textWidth/2, y2: textY + 3
+                pot_id: potId, 
+                x1: (pt.x - textWidth/2) + offsetX, 
+                y1: textY - 8, 
+                x2: (pt.x + textWidth/2) + offsetX, 
+                y2: textY + 3
               });
             });
           }
         });
+        ctx.restore();
       }
 
       diaryCanvasElement.addEventListener('click', (e) => {
@@ -589,14 +658,14 @@
         drawDiaryCurves();
       });
 
-      // 相机调度
+      // 相机调度控制
       async function startCamera() {
         try {
           cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1080 }, height: { ideal: 1080 } }, audio: false });
           cameraPreview.srcObject = cameraStream;
           cameraLayer.setAttribute('aria-hidden', 'false');
         } catch (err) {
-          alert("未检测到有效摄像硬件。原型已自动为您切入数据填写空间。");
+          alert("未检测到摄像头，已自动切入录入表单。");
           stopCamera();
           inputModal.style.display = 'flex';
         }
@@ -623,7 +692,7 @@
 
       document.getElementById('savePlantBtn').addEventListener('click', () => {
         const potId = document.getElementById('inputPotId').value.trim() || `#P0${DATABASE.pots.length + 1}`;
-        const name = document.getElementById('inputName').value.trim() || "未知农作物";
+        const name = document.getElementById('inputName').value.trim() || "新农作";
         const family = document.getElementById('inputFamily').value;
         const pickedDate = document.getElementById('inputDate').value || "2026-06-06";
         const parsedMonth = parseInt(pickedDate.split('-')[1]) || 6;
@@ -661,7 +730,6 @@
 
       dockItems.forEach(item => { item.addEventListener('click', () => switchTab(item.getAttribute('data-mode'))); });
 
-      // 首屏驱动初始化
       render3DWall();
     </script>
   </body>
